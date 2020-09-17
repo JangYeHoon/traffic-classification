@@ -30,5 +30,6 @@ vae_mlp(decoder&mlp).py
 vae_mlp.py
 - ae_mlp.py와 똑같이 VAE와 MLP를 결합
 
-Kingma, D. P., & Welling, M. (2013). Auto-encoding variational bayes. arXiv preprint arXiv:1312.6114.
-Do, C. B. (2008). The multivariate gaussian distribution. Section Notes, Lecture on Machine Learning, CS, 229.
+Reference
+- Kingma, D. P., & Welling, M. (2013). Auto-encoding variational bayes. arXiv preprint arXiv:1312.6114.
+- Do, C. B. (2008). The multivariate gaussian distribution. Section Notes, Lecture on Machine Learning, CS, 229.
