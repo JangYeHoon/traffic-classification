@@ -6,7 +6,6 @@ import torchvision
 from torchvision import transforms
 import torch.optim as optim
 from torch import nn
-import matplotlib.pyplot as plt
 from scipy.stats import norm, entropy
 import torch.nn as nn
 import pandas as pd
@@ -15,14 +14,13 @@ from torch.autograd import Variable
 import random
 from sklearn.preprocessing import StandardScaler, RobustScaler, MaxAbsScaler, MinMaxScaler
 import time
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, plot_confusion_matrix
 import pandas as pd
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 import scipy.stats as st
 import torch.nn.functional as F
 from scipy.spatial import distance
-import pyro.distributions as dist
 
 z_dim = 3
 input = 6
@@ -228,7 +226,7 @@ def vae_test(model, test_dataset, norm_columns):
 # test
 #
 #############################
-def jsd_test():
+def jsd_test(model):
 	train_csv = pd.read_csv('data/vae_train_data_app' + str(app) + '_' + str(pkt_cnt) + '_z' + str(z_dim) + '_i' + str(input) + '.csv')
 	train_csv = np.array(train_csv)
 	train_list = train_csv[:,1:pd_colum]
@@ -242,6 +240,7 @@ def jsd_test():
 	y_true = []
 	y_pred = []
 	y_pred2 = []
+	label=['voip', 'game', 'real-time', 'non-real-time', 'cloud', 'web']
 
 	class_correct = list(0. for i in range(6))
 	class_correct2 = list(0. for i in range(6))
@@ -324,6 +323,12 @@ def jsd_test():
 		100. * np.sum(class_correct2) / np.sum(class_total),
 		np.sum(class_correct2), np.sum(class_total)))
 
+	conf = confusion_matrix(y_true, y_pred)
+	print(conf)
+
+	plot_confusion_matrix(model, y_pred, y_true, display_labels=label, nomalize='true')
+	plt.show()
+
 	print('max_time : %f' % (np.max(time_check)))
 	print('avg_time : %f' % (np.mean(time_check)))
 	print('min_time : %f' % (np.min(time_check)))
@@ -336,6 +341,6 @@ if __name__ == "__main__":
 	test_dataset = Packet_Dataset(feature_dir='data/test_data_' + str(pkt_cnt) + '.csv',
 									   transform=transform)
 	norm_columns = ['mu', 'sig', 'mu', 'sig', 'mu', 'sig', 'class']
-	vae_train(model, train_dataset, norm_columns)
-	vae_test(model, test_dataset, norm_columns)
-	jsd_test()
+	#vae_train(model, train_dataset, norm_columns)
+	#vae_test(model, test_dataset, norm_columns)
+	jsd_test(model)
