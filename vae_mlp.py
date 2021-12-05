@@ -2,7 +2,6 @@ import torch
 from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
-import torchvision
 from torchvision import transforms
 import torch.optim as optim
 from torch import nn
@@ -22,13 +21,14 @@ from pandas import DataFrame
 import scipy.stats as st
 import torch.nn.functional as F
 from scipy.spatial import distance
-import pyro.distributions as dist
+import torch.distributions as dist
+import itertools
 
-z_dim = 1
+z_dim = 3
 input = 6
 pd_colum = z_dim*2+1
 epoch_number = 20
-pkt_cnt = 20
+pkt_cnt = 70
 
 class Normal(object):
 	def __init__(self, mu, sigma, log_sigma, v=None, r=None):
@@ -235,6 +235,44 @@ def vae_mlp_train(vae):
 	
 	return classifier
 
+def plot_confusion_matrix(cm, target_names=None, cmap=None, normalize=True, labels=True, title='Confusion matrix'):
+    accuracy = np.trace(cm) / float(np.sum(cm))
+    misclass = 1 - accuracy
+
+    if cmap is None:
+        cmap = plt.get_cmap('Blues')
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        
+    plt.figure(figsize=(8, 6))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+
+    thresh = cm.max() / 1.5 if normalize else cm.max() / 2
+    
+    if target_names is not None:
+        tick_marks = np.arange(len(target_names))
+        plt.xticks(tick_marks, target_names)
+        plt.yticks(tick_marks, target_names)
+    
+    if labels:
+        for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+            if normalize:
+                plt.text(j, i, "{:0.2f}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+            else:
+                plt.text(j, i, "{:,}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
+    plt.show()
+
 #############################
 #
 # test
@@ -271,13 +309,13 @@ def test(classifier):
 				if target[0][0].data[pred2] == 1:
 					class_correct2[pred2] += 1
 			y_pred2.append(pred2)
-			y_pred.append(pred)
+			y_pred.append(pred.item())
 			classes = -1
 			for i in range(0, 6):
 				if target[0][0].data[i] == 1:
-					y_true.append(i)
 					classes = i
 			class_total[classes] += 1
+			y_true.append(classes)
 	test_loss /= test_dataset.__len__()
 	print('====> Test set loss: {:.4f}'.format(test_loss))
 	print('------------top 1------------')
@@ -305,6 +343,10 @@ def test(classifier):
 	print('\nTest Accuracy (Overall): %2d%% (%2d/%2d)' % (
 		100. * np.sum(class_correct2) / np.sum(class_total),
 		np.sum(class_correct2), np.sum(class_total)))
+	
+	label=['voip', 'game', 'real-time', 'non-real-time', 'cloud', 'web']
+	conf = confusion_matrix(y_true, y_pred)
+	plot_confusion_matrix(conf, target_names=label)
 
 if __name__ == "__main__":
 	vae = VAE()

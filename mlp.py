@@ -14,9 +14,10 @@ from sklearn.metrics import confusion_matrix
 import pandas as pd
 import matplotlib.pyplot as plt
 from pandas import DataFrame
+import itertools
 
 input = 6
-pkt_cnt = 20
+pkt_cnt = 70
 n_epochs = 20# 학습 epoch 지정
 criterion = nn.MSELoss()
 
@@ -108,6 +109,44 @@ def mlp_train(net):
 		print('Epoch: {} \tTraining Loss: {:.6f}'.format(epoch+1,visualize_loss))
 	torch.save(net.state_dict(), 'model/model_mlp_f' + str(input) + '_c' + str(pkt_cnt) + '.pth')				# model 저장 함수
 
+def plot_confusion_matrix(cm, target_names=None, cmap=None, normalize=True, labels=True, title='Confusion matrix'):
+    accuracy = np.trace(cm) / float(np.sum(cm))
+    misclass = 1 - accuracy
+
+    if cmap is None:
+        cmap = plt.get_cmap('Blues')
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        
+    plt.figure(figsize=(8, 6))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+
+    thresh = cm.max() / 1.5 if normalize else cm.max() / 2
+    
+    if target_names is not None:
+        tick_marks = np.arange(len(target_names))
+        plt.xticks(tick_marks, target_names)
+        plt.yticks(tick_marks, target_names)
+    
+    if labels:
+        for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+            if normalize:
+                plt.text(j, i, "{:0.2f}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+            else:
+                plt.text(j, i, "{:,}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
+    plt.show()
+
 def mlp_test(net):
 	test_loss = 0.0
 	class_correct = list(0. for i in range(6))
@@ -134,13 +173,13 @@ def mlp_test(net):
 			if target[0][0].data[pred2] == 1:
 				class_correct2[pred2] += 1
 		y_pred2.append(pred2)
-		y_pred.append(pred)
+		y_pred.append(pred.item())
 		classes = -1
 		for i in range(0, 6):
 			if target[0][0].data[i] == 1:
-				y_true.append(i)
 				classes = i
 		class_total[classes] += 1
+		y_true.append(classes)
 
 	test_loss = test_loss/test_loader.__len__()
 	print('Test Loss: {:.6f}\n'.format(test_loss))
@@ -169,6 +208,10 @@ def mlp_test(net):
 	print('\nTest Accuracy (Overall): %2d%% (%2d/%2d)' % (
 		100. * np.sum(class_correct2) / np.sum(class_total),
 		np.sum(class_correct2), np.sum(class_total)))
+	
+	label=['voip', 'game', 'real-time', 'non-real-time', 'cloud', 'web']
+	conf = confusion_matrix(y_true, y_pred)
+	plot_confusion_matrix(conf, target_names=label)
 
 if __name__ == "__main__":
 	net = Net()

@@ -22,12 +22,13 @@ from pandas import DataFrame
 import scipy.stats as st
 import torch.nn.functional as F
 from scipy.spatial import distance
-import pyro.distributions as dist
+import itertools
 
-z_dim = 1
+z_dim = 3
 input = 6
 pd_colum = z_dim*2+1
 epoch_number = 20
+pkt_cnt = 70
 
 class Normal(object):
     def __init__(self, mu, sigma, log_sigma, v=None, r=None):
@@ -103,8 +104,8 @@ class Packet_Dataset(Dataset):
         self.transform = transform
         df = pd.read_csv(feature_dir)
         df = np.array(df)
-        df2 = df[:,:input]
-        self.result_array = df[:,input:]
+        df2 = df[:,1:input+1]
+        self.result_array = df[:,input+1:]
         result = []
         for i in range(len(self.result_array)):
             templist = []
@@ -141,7 +142,7 @@ class Packet_Dataset(Dataset):
 #
 #############################
 transform = transforms.ToTensor()
-face_dataset = Packet_Dataset(feature_dir='data/train_data_200.csv',
+face_dataset = Packet_Dataset(feature_dir='data/train_data_' + str(pkt_cnt) + '.csv',
                                    transform=transform)
 
 model = VAE()
@@ -170,6 +171,44 @@ torch.save(model.state_dict(), 'model/model_vae_mlp_f6_c200_z1.pth')				# model 
 finish_time = time.time()
 print('time : ', start_time - finish_time)
 
+def plot_confusion_matrix(cm, target_names=None, cmap=None, normalize=True, labels=True, title='Confusion matrix'):
+    accuracy = np.trace(cm) / float(np.sum(cm))
+    misclass = 1 - accuracy
+
+    if cmap is None:
+        cmap = plt.get_cmap('Blues')
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        
+    plt.figure(figsize=(8, 6))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+
+    thresh = cm.max() / 1.5 if normalize else cm.max() / 2
+    
+    if target_names is not None:
+        tick_marks = np.arange(len(target_names))
+        plt.xticks(tick_marks, target_names)
+        plt.yticks(tick_marks, target_names)
+    
+    if labels:
+        for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+            if normalize:
+                plt.text(j, i, "{:0.2f}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+            else:
+                plt.text(j, i, "{:,}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
+    plt.show()
+
 
 #############################
 #
@@ -177,7 +216,7 @@ print('time : ', start_time - finish_time)
 #
 #############################
 transform = transforms.ToTensor()
-face_dataset = Packet_Dataset(feature_dir='data/test_data_200.csv',
+face_dataset = Packet_Dataset(feature_dir='data/test_data_' + str(pkt_cnt) + '.csv',
                                    transform=transform)
 model.eval()
 test_loss = 0
@@ -204,13 +243,13 @@ with torch.no_grad():
         	if target[0][0].data[pred2] == 1:
         		class_correct2[pred2] += 1
         y_pred2.append(pred2)
-        y_pred.append(pred)
+        y_pred.append(pred.item())
         classes = -1
         for i in range(0, 6):
         	if target[0][0].data[i] == 1:
-        		y_true.append(i)
         		classes = i
         class_total[classes] += 1
+        y_true.append(classes)
 test_loss /= face_dataset.__len__()
 print('====> Test set loss: {:.4f}'.format(test_loss))
 print('------------top 1------------')
@@ -238,3 +277,7 @@ for i in range(6):
 print('\nTest Accuracy (Overall): %2d%% (%2d/%2d)' % (
     100. * np.sum(class_correct2) / np.sum(class_total),
     np.sum(class_correct2), np.sum(class_total)))
+
+label=['voip', 'game', 'real-time', 'non-real-time', 'cloud', 'web']
+conf = confusion_matrix(y_true, y_pred)
+plot_confusion_matrix(conf, target_names=label)

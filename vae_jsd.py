@@ -14,13 +14,14 @@ from torch.autograd import Variable
 import random
 from sklearn.preprocessing import StandardScaler, RobustScaler, MaxAbsScaler, MinMaxScaler
 import time
-from sklearn.metrics import confusion_matrix, plot_confusion_matrix
+from sklearn.metrics import confusion_matrix
 import pandas as pd
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 import scipy.stats as st
 import torch.nn.functional as F
 from scipy.spatial import distance
+import itertools
 
 z_dim = 3
 input = 6
@@ -220,7 +221,47 @@ def vae_test(model, test_dataset, norm_columns):
 		columns = norm_columns
 	)
 	df.to_csv('data/vae_test_data_app' + str(app) + '_' + str(pkt_cnt) + '_z' + str(z_dim) + '_i' + str(input) + '.csv')
-	
+
+
+
+def plot_confusion_matrix(cm, target_names=None, cmap=None, normalize=True, labels=True, title='Confusion matrix'):
+    accuracy = np.trace(cm) / float(np.sum(cm))
+    misclass = 1 - accuracy
+
+    if cmap is None:
+        cmap = plt.get_cmap('Blues')
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        
+    plt.figure(figsize=(8, 6))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+
+    thresh = cm.max() / 1.5 if normalize else cm.max() / 2
+    
+    if target_names is not None:
+        tick_marks = np.arange(len(target_names))
+        plt.xticks(tick_marks, target_names)
+        plt.yticks(tick_marks, target_names)
+    
+    if labels:
+        for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+            if normalize:
+                plt.text(j, i, "{:0.2f}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+            else:
+                plt.text(j, i, "{:,}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
+    plt.show()
+
 #############################
 #
 # test
@@ -326,8 +367,7 @@ def jsd_test(model):
 	conf = confusion_matrix(y_true, y_pred)
 	print(conf)
 
-	plot_confusion_matrix(model, y_pred, y_true, display_labels=label, nomalize='true')
-	plt.show()
+	plot_confusion_matrix(conf, target_names=label)
 
 	print('max_time : %f' % (np.max(time_check)))
 	print('avg_time : %f' % (np.mean(time_check)))
