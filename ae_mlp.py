@@ -198,22 +198,22 @@ def plot_confusion_matrix(cm, target_names=None, cmap=None, normalize=True, labe
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
     
-    plt.rc('font', size=20)
-    plt.rc('axes', labelsize=17)   # x,y축 label 폰트 크기
-    plt.rc('xtick', labelsize=15)  # x축 눈금 폰트 크기 
-    plt.rc('ytick', labelsize=15)  # y축 눈금 폰트 크기
-    plt.rc('legend', fontsize=15)  # 범례 폰트 크기
-    plt.rc('figure', titlesize=15) # figure title 폰트 크기
-    plt.figure(figsize=(8, 6))
+    plt.rc('font', size=26)
+    plt.rc('axes', labelsize=26)   # x,y축 label 폰트 크기
+    plt.rc('xtick', labelsize=26)  # x축 눈금 폰트 크기 
+    plt.rc('ytick', labelsize=26)  # y축 눈금 폰트 크기
+    plt.rc('legend', fontsize=28)  # 범례 폰트 크기
+    plt.rc('figure', titlesize=28) # figure title 폰트 크기
+    plt.figure(figsize=(11, 9))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
     plt.colorbar()
 
     thresh = cm.max() / 1.5 if normalize else cm.max() / 2
     
     if target_names is not None:
         tick_marks = np.arange(len(target_names))
-        plt.xticks(tick_marks, target_names)
+        plt.xticks(tick_marks, target_names, rotation=-60)
+        plt.tick_params(axis='x', pad=5)
         plt.yticks(tick_marks, target_names)
     
     if labels:
@@ -229,7 +229,7 @@ def plot_confusion_matrix(cm, target_names=None, cmap=None, normalize=True, labe
 
     plt.tight_layout()
     plt.ylabel('True label')
-    plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
+    plt.xlabel('Predicted label')
     plt.show()
 
 #############################
@@ -304,7 +304,7 @@ def test(classifier):
 		100. * np.sum(class_correct2) / np.sum(class_total),
 		np.sum(class_correct2), np.sum(class_total)))
 	
-	label=['voip', 'game', 'real-time', 'non-real-time', 'cloud', 'web']
+	label=['Voip', 'Game', 'Real-time\nstreaming', 'Non real-time\nstreaming', 'Cloud\nstorage', 'Web']
 	conf = confusion_matrix(y_true, y_pred)
 	plot_confusion_matrix(conf, target_names=label)
 
