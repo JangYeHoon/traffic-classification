@@ -197,7 +197,13 @@ def plot_confusion_matrix(cm, target_names=None, cmap=None, normalize=True, labe
 
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        
+    
+    plt.rc('font', size=20)
+    plt.rc('axes', labelsize=17)   # x,y축 label 폰트 크기
+    plt.rc('xtick', labelsize=15)  # x축 눈금 폰트 크기 
+    plt.rc('ytick', labelsize=15)  # y축 눈금 폰트 크기
+    plt.rc('legend', fontsize=15)  # 범례 폰트 크기
+    plt.rc('figure', titlesize=15) # figure title 폰트 크기
     plt.figure(figsize=(8, 6))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
